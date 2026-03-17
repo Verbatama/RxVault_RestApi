@@ -2,64 +2,41 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("Obats", {
+    await queryInterface.createTable("Stoks", {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      nama_obat: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
-      },
-      dosis: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-      },
-      satuan_dosis: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      bentuk_obat_id: {
+      obat_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "BentukObats",
+          model: "Obats",
           key: "id",
         },
       },
-
-      golongan_obat_id: {
+      nomor_batch: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      jumlah_obat: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+      },
+      expired_date: {
+        type: Sequelize.DATE,
+        allowNull: false,
+      },
+      lokasi_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "GolonganObats",
+          model: "Lokasis",
           key: "id",
         },
       },
-
-      kode_obat: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
-      },
-
-      brand_obat_id: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: "BrandObats",
-          key: "id",
-        },
-      },
-      bpom: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
-      },
-
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
@@ -71,6 +48,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("Obats");
+    await queryInterface.dropTable("Stoks");
   },
 };

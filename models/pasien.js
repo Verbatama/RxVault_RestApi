@@ -21,8 +21,17 @@ module.exports = (sequelize, DataTypes) => {
   }
   Pasien.init(
     {
-      nama: {
+      nama_pasien: {
         type: DataTypes.STRING,
+        allowNull: false,
+      },
+      jenis_kelamin: {
+        type: DataTypes.ENUM("Laki-laki", "Perempuan"),
+        allowNull: false,
+      },
+
+      umur: {
+        type: DataTypes.INTEGER,
         allowNull: false,
       },
       alamat: {

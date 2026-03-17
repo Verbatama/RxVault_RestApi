@@ -1,39 +1,36 @@
 "use strict";
 const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
-  class Resep extends Model {
+  class Dispensing extends Model {
     /**
      * Helper method for defining associations.
      * This method is not a part of Sequelize lifecycle.
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
-      Resep.belongsTo(models.Dokter, {
-        foreignKey: "dokter_id",
-        as: "dokter",
+      Dispensing.belongsTo(models.StatusDispensing, {
+        foreignKey: "status_id",
+        as: "status",
       });
-      Resep.belongsTo(models.Pasien, {
-        foreignKey: "pasien_id",
-        as: "pasien",
+
+      Dispensing.belongsTo(models.Apoteker, {
+        foreignKey: "apoteker_id",
+        as: "apoteker",
       });
-      Resep.hasMany(models.DetailResep, {
+
+      Dispensing.belongsTo(models.Resep, {
         foreignKey: "resep_id",
-        as: "detailReseps",
-      });
-      Resep.hasOne(models.Dispensing, {
-        foreignKey: "resep_id",
-        as: "dispensigs",
+        as: "resep",
       });
     }
   }
-  Resep.init(
+  Dispensing.init(
     {
-      dokter_id: {
+      resep_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      pasien_id: {
+      apoteker_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
@@ -41,11 +38,15 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: false,
       },
+      status_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
     },
     {
       sequelize,
-      modelName: "Resep",
+      modelName: "Dispensing",
     },
   );
-  return Resep;
+  return Dispensing;
 };

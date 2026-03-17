@@ -2,64 +2,41 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("Obats", {
+    await queryInterface.createTable("Dispensings", {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      nama_obat: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
-      },
-      dosis: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-      },
-      satuan_dosis: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      bentuk_obat_id: {
+      resep_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "BentukObats",
+          model: "Reseps",
           key: "id",
         },
       },
-
-      golongan_obat_id: {
+      apoteker_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "GolonganObats",
+          model: "Apotekers",
           key: "id",
         },
       },
-
-      kode_obat: {
-        type: Sequelize.STRING,
+      tanggal: {
+        type: Sequelize.DATE,
         allowNull: false,
-        unique: true,
       },
-
-      brand_obat_id: {
+      status_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "BrandObats",
+          model: "StatusDispensings",
           key: "id",
         },
       },
-      bpom: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
-      },
-
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
@@ -71,6 +48,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("Obats");
+    await queryInterface.dropTable("Dispensings");
   },
 };

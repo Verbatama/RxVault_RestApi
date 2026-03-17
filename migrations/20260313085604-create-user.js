@@ -13,6 +13,14 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
+      role_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "Roles",
+          key: "id",
+        },
+      },
       email: {
         type: Sequelize.STRING,
         unique: true,
@@ -22,6 +30,17 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
+      sipa: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        unique: true,
+      },
+      stra: {
+        type: Sequelize.STRING,
+        allowNull: true,
+        unique: true,
+      },
+
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

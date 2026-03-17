@@ -2,64 +2,65 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("Obats", {
+    await queryInterface.createTable("MutasiStoks", {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      nama_obat: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
-      },
-      dosis: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-      },
-      satuan_dosis: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      bentuk_obat_id: {
+      obat_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "BentukObats",
+          model: "Obats",
           key: "id",
         },
       },
-
-      golongan_obat_id: {
+      dari_lokasi_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "GolonganObats",
+          model: "Lokasis",
           key: "id",
         },
       },
-
-      kode_obat: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
-      },
-
-      brand_obat_id: {
+      ke_lokasi_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "BrandObats",
+          model: "Lokasis",
           key: "id",
         },
       },
-      bpom: {
+      jumlah_obat: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+      },
+      nomor_batch: {
         type: Sequelize.STRING,
         allowNull: false,
-        unique: true,
       },
-
+      tanggal_mutasi: {
+        type: Sequelize.DATE,
+        allowNull: false,
+      },
+      jenis_mutasi_id: {
+        type: Sequelize.INTEGER,
+        allowNull: false,
+        references: {
+          model: "JenisMutasis",
+          key: "id",
+        },
+      },
+      supplier_id: {
+        type: Sequelize.INTEGER,
+        allowNull: true,
+        references: {
+          model: "Suppliers",
+          key: "id",
+        },
+      },
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,
@@ -71,6 +72,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("Obats");
+    await queryInterface.dropTable("MutasiStoks");
   },
 };

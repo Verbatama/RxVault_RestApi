@@ -2,40 +2,27 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable("Pasiens", {
+    await queryInterface.createTable("Suppliers", {
       id: {
         allowNull: false,
         autoIncrement: true,
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      nama_pasien: {
+      nama_supplier: {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      jenis_kelamin: {
-        type: Sequelize.ENUM("Laki-laki", "Perempuan"),
-        allowNull: false,
-      },
-      umur: {
-        type: Sequelize.INTEGER,
+      kontak: {
+        type: Sequelize.STRING,
         allowNull: false,
       },
       alamat: {
         type: Sequelize.STRING,
         allowNull: false,
       },
-      tanggal_lahir: {
-        type: Sequelize.DATE,
-        allowNull: false,
-      },
-      no_rekam_medis: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
-      },
       createdAt: {
-        allowNuasdadall: false,
+        allowNull: false,
         type: Sequelize.DATE,
       },
       updatedAt: {
@@ -45,6 +32,6 @@ module.exports = {
     });
   },
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable("Pasiens");
+    await queryInterface.dropTable("Suppliers");
   },
 };
