@@ -22,7 +22,7 @@ module.exports = (sequelize, DataTypes) => {
   }
   Dokter.init(
     {
-      nama: {
+      nama_dokter: {
         type: DataTypes.STRING,
         allowNull: false,
       },

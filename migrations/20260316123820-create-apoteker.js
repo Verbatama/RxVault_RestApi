@@ -9,7 +9,7 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      nama: {
+      nama_apoteker: {
         type: Sequelize.STRING,
         allowNull: false,
       },

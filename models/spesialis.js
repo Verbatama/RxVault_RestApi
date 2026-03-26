@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       // define association here
-      Spesialis.hasMany(models.Dokters, {
+      Spesialis.hasMany(models.Dokter, {
         foreignKey: "spesialis_id",
         as: "dokters",
       });
@@ -17,9 +17,9 @@ module.exports = (sequelize, DataTypes) => {
   }
   Spesialis.init(
     {
-      nama: {
+      nama_spesialis: {
         type: DataTypes.STRING,
-        allowNull: true,
+        allowNull: false,
       },
     },
     {

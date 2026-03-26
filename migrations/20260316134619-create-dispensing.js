@@ -25,7 +25,7 @@ module.exports = {
           key: "id",
         },
       },
-      tanggal: {
+      dispensingAt: {
         type: Sequelize.DATE,
         allowNull: false,
       },

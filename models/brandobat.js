@@ -17,7 +17,7 @@ module.exports = (sequelize, DataTypes) => {
   }
   BrandObat.init(
     {
-      nama_brand: {
+      nama_brand_obat: {
         type: DataTypes.STRING,
         allowNull: false,
       },

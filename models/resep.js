@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
       });
       Resep.hasOne(models.Dispensing, {
         foreignKey: "resep_id",
-        as: "dispensigs",
+        as: "dispensings",
       });
     }
   }

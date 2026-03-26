@@ -9,7 +9,7 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      nama_brand: {
+      nama_brand_obat: {
         type: Sequelize.STRING,
         allowNull: false,
       },

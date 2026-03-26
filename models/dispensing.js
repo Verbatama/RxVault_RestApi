@@ -34,7 +34,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      tanggal: {
+      dispensingAt: {
         type: DataTypes.DATE,
         allowNull: false,
       },

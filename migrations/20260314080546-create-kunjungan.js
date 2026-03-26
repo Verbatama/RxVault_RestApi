@@ -30,8 +30,9 @@ module.exports = {
         allowNull: false,
       },
       no_registrasi: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING,
         allowNull: false,
+        unique: true,
       },
       kode_registrasi: {
         type: Sequelize.STRING,
