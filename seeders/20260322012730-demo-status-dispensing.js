@@ -14,12 +14,17 @@ module.exports = {
      */
     await queryInterface.bulkInsert("StatusDispensings", [
       {
-        nama_status: "Status A",
+        nama_status: "Belum",
         createdAt: new Date(),
         updatedAt: new Date(),
       },
       {
-        nama_status: "Status B",
+        nama_status: "Sudah",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        nama_status: "Pending",
         createdAt: new Date(),
         updatedAt: new Date(),
       },

@@ -14,6 +14,11 @@ module.exports = (sequelize, DataTypes) => {
         as: "pasien",
       });
 
+      Kunjungan.hasMany(models.Resep, {
+        foreignKey: "kunjungan_id",
+        as: "reseps",
+      });
+
       Kunjungan.belongsTo(models.Poli, {
         foreignKey: "poli_id",
         as: "poli",
@@ -35,7 +40,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       no_registrasi: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         allowNull: false,
       },
 

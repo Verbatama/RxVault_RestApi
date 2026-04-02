@@ -9,7 +9,7 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       Dispensing.belongsTo(models.StatusDispensing, {
-        foreignKey: "status_id",
+        foreignKey: "status_dispensing_id",
         as: "status",
       });
 
@@ -17,16 +17,15 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "apoteker_id",
         as: "apoteker",
       });
-
-      Dispensing.belongsTo(models.Resep, {
-        foreignKey: "resep_id",
-        as: "resep",
-      });
+      Dispensing.belongsTo(models.DetailResep, {
+        foreignKey: "detail_resep_id",
+        as: "detailResep"
+      })
     }
   }
   Dispensing.init(
     {
-      resep_id: {
+      detail_resep_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
@@ -38,9 +37,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.DATE,
         allowNull: false,
       },
-      status_id: {
+      status_dispensing_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
+      },
+      is_stok_keluar: {
+        type: DataTypes.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
       },
     },
     {

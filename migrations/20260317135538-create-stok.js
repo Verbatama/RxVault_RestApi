@@ -9,11 +9,11 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      obat_id: {
+      produk_obat_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "Obats",
+          model: "ProdukObats",
           key: "id",
         },
       },
@@ -29,14 +29,7 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
       },
-      lokasi_id: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: "Lokasis",
-          key: "id",
-        },
-      },
+      
       createdAt: {
         allowNull: false,
         type: Sequelize.DATE,

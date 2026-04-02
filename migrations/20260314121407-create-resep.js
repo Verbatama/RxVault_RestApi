@@ -17,11 +17,11 @@ module.exports = {
           key: "id",
         },
       },
-      pasien_id: {
+      kunjungan_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "Pasiens",
+          model: "Kunjungans",
           key: "id",
         },
       },

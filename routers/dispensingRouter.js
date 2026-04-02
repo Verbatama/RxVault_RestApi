@@ -1,12 +1,27 @@
-const express = require('express')
-const router = express.Router()
-const {createDispensingSchema, updateDispensingSchema} = require('../schemas/dispensingSchema')
-const validate = require('../helpers/validate')
-const {getDispensing, getDispensingById, createDispensing, updateDispensing} = require('../controllers/dispensingController')
+const express = require("express");
+const router = express.Router();
+const {
+  createDispensingSchema,
+  processDispensingByNoRegSchema,
+  updateDispensingSchema,
+} = require("../schemas/dispensingSchema");
+const validate = require("../helpers/validate");
+const {
+  getDispensing,
+  getDispensingById,
+  createDispensing,
+  updateDispensing,
+  getDispensingByNoReg,
+  processDispensingByNoReg,
+  getDispensingQueue,
+} = require("../controllers/dispensingController");
 
-router.get('/', getDispensing)
-router.get('/:id', getDispensingById)
-router.post('/', validate(createDispensingSchema) , createDispensing)
-router.put('/:id', validate(updateDispensingSchema), updateDispensing)
+router.get("/", getDispensing);
+router.get("/queue", getDispensingQueue);
+router.get("/by-no-reg/:no_registrasi", getDispensingByNoReg);
+router.get("/:id", getDispensingById);
+router.post("/", validate(createDispensingSchema), createDispensing);
+router.post("/process-by-no-reg", validate(processDispensingByNoRegSchema), processDispensingByNoReg);
+router.put("/:id", validate(updateDispensingSchema), updateDispensing);
 
-module.exports = router
+module.exports = router;

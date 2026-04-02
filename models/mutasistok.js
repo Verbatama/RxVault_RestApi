@@ -28,6 +28,11 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "jenis_mutasi_id",
         as: "jenisMutasi",
       });
+
+      MutasiStok.belongsTo(models.Supplier, {
+        foreignKey: "supplier_id",
+        as: "supplier",
+      });
     }
   }
   MutasiStok.init(

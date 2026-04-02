@@ -3,50 +3,81 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
-    /**
-     * Add seed commands here.
-     *
-     * Example:
-     * await queryInterface.bulkInsert('People', [{
-     *   name: 'John Doe',
-     *   isBetaMember: false
-     * }], {});
-     */
     await queryInterface.bulkInsert("Obats", [
       {
-        nama_obat: "Obat A",
-        dosis: 250,
-        satuan_dosis: "mg",
-        bentuk_obat_id: 1,
-        golongan_obat_id: 2,
-        kode_obat: "OBAT122312",
-        brand_obat_id: 1,
-        bpom: "tess",
+        id: 1,
+        nama_obat: "Paracetamol",
+        golongan_obat_id: 1,
         createdAt: new Date(),
         updatedAt: new Date(),
       },
       {
-        nama_obat: "Obat B",
-        dosis: 250,
-        satuan_dosis: "mg",
-        bentuk_obat_id: 1,
+        id: 2,
+        nama_obat: "Amoxicillin",
         golongan_obat_id: 2,
-        kode_obat: "OBAT122122",
-        brand_obat_id: 2,
-        bpom: "tesy",
         createdAt: new Date(),
         updatedAt: new Date(),
       },
-    ]);
+      {
+        id: 3,
+        nama_obat: "Ibuprofen",
+        golongan_obat_id: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 4,
+        nama_obat: "Cefadroxil",
+        golongan_obat_id: 2,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 5,
+        nama_obat: "CTM",
+        golongan_obat_id: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 6,
+        nama_obat: "Antasida",
+        golongan_obat_id: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 7,
+        nama_obat: "Omeprazole",
+        golongan_obat_id: 2,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 8,
+        nama_obat: "Salbutamol",
+        golongan_obat_id: 2,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 9,
+        nama_obat: "Metformin",
+        golongan_obat_id: 2,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 10,
+        nama_obat: "Amlodipine",
+        golongan_obat_id: 2,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }
+    ], {});
   },
 
   async down(queryInterface, Sequelize) {
-    /**
-     * Add commands to revert seed here.
-     *
-     * Example:
-     * await queryInterface.bulkDelete('People', null, {});
-     */
     await queryInterface.bulkDelete("Obats", null, {});
   },
 };

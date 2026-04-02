@@ -17,6 +17,10 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "resep_id",
         as: "resep",
       });
+      DetailResep.hasMany(models.Dispensing, {
+        foreignKey: "detail_resep_id",
+        as:"dispensing"
+      })
     }
   }
   DetailResep.init(

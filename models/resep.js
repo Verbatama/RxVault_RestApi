@@ -13,17 +13,13 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "dokter_id",
         as: "dokter",
       });
-      Resep.belongsTo(models.Pasien, {
-        foreignKey: "pasien_id",
-        as: "pasien",
+      Resep.belongsTo(models.Kunjungan, {
+        foreignKey: "kunjungan_id",
+        as: "kunjungan",
       });
       Resep.hasMany(models.DetailResep, {
         foreignKey: "resep_id",
         as: "detailReseps",
-      });
-      Resep.hasOne(models.Dispensing, {
-        foreignKey: "resep_id",
-        as: "dispensings",
       });
     }
   }
@@ -33,7 +29,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
-      pasien_id: {
+      kunjungan_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },

@@ -14,6 +14,7 @@ module.exports = {
      */
     await queryInterface.bulkInsert("Dokters", [
       {
+        id: 1,
         nama_dokter: "Syarif",
         sip: "1111/sip-xxx/2022",
         spesialis_id: 1,

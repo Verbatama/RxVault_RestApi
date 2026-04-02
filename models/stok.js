@@ -8,16 +8,25 @@ module.exports = (sequelize, DataTypes) => {
      * The `models/index` file will call this method automatically.
      */
     static associate(models) {
-      // define association here
-      Stok.belongsTo(models.Obat, {
-        foreignKey: "obat_id",
-        as: "obat",
+      // Stok belongs to ProdukObat via produk_obat_id
+      Stok.belongsTo(models.ProdukObat, {
+        foreignKey: "produk_obat_id",
+        as: "produkObat",
+      });
+
+      Stok.belongsTo(models.Lokasi, {
+        foreignKey: "lokasi_id",
+        as: "lokasi",
       });
     }
   }
   Stok.init(
     {
-      obat_id: {
+      produk_obat_id: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+      },
+      lokasi_id: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
@@ -31,10 +40,6 @@ module.exports = (sequelize, DataTypes) => {
       },
       expired_date: {
         type: DataTypes.DATE,
-        allowNull: false,
-      },
-      lokasi_id: {
-        type: DataTypes.INTEGER,
         allowNull: false,
       },
     },

@@ -7,7 +7,7 @@ module.exports = {
       {
         nama_lokasi: "Apotek",
         createdAt: new Date(),
-        updatedAt:  new Date(),
+        updatedAt: new Date(),
       },
       {
         nama_lokasi: "Gudang",

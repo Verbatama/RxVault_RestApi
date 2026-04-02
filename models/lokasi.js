@@ -14,8 +14,12 @@ module.exports = (sequelize, DataTypes) => {
         as: "stoks",
       });
       Lokasi.hasMany(models.MutasiStok, {
-        foreignKey: "lokasi_id",
-        as: "mutasiStoks",
+        foreignKey: "dari_lokasi_id",
+        as: "mutasiKeluar",
+      });
+      Lokasi.hasMany(models.MutasiStok, {
+        foreignKey: "ke_lokasi_id",
+        as: "mutasiMasuk",
       });
     }
   }

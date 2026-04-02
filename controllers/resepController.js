@@ -1,8 +1,5 @@
 const { Resep, DetailResep, sequelize, Pasien, Obat } = require("../models");
 const respon = require("../helpers/responseHelper");
-const { includes } = require("zod");
-const { where } = require("sequelize");
-
 const getResep = async (req, res) => {
   try {
     const data = await Resep.findAll({
@@ -37,6 +34,7 @@ const getResepById = async (req, res) => {
   }
 };
 
+// masih salah, karena ganti relasi, schema juga
 const createResep = async (req, res) => {
   try {
     const { dokter_id, pasien_id, tanggal, DetailReseps } = req.body;

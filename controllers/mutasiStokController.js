@@ -28,7 +28,7 @@ const createMutasiStok = async (req, res) => {
         jenis_mutasi_id,
         supplier_id,
       },
-      { transaction: t }
+      { transaction: t },
     );
 
     // 2. Kurangi stok asal
@@ -62,7 +62,7 @@ const createMutasiStok = async (req, res) => {
           jumlah_obat,
           expired_date: stokAsal.expired_date,
         },
-        { transaction: t }
+        { transaction: t },
       );
     }
 
@@ -79,4 +79,3 @@ const createMutasiStok = async (req, res) => {
 module.exports = {
   createMutasiStok,
 };
-

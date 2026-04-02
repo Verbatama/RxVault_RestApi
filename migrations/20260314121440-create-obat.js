@@ -14,22 +14,7 @@ module.exports = {
         allowNull: false,
         unique: true,
       },
-      dosis: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-      },
-      satuan_dosis: {
-        type: Sequelize.STRING,
-        allowNull: false,
-      },
-      bentuk_obat_id: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: "BentukObats",
-          key: "id",
-        },
-      },
+       
 
       golongan_obat_id: {
         type: Sequelize.INTEGER,
@@ -40,25 +25,10 @@ module.exports = {
         },
       },
 
-      kode_obat: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
-      },
+     
 
-      brand_obat_id: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        references: {
-          model: "BrandObats",
-          key: "id",
-        },
-      },
-      bpom: {
-        type: Sequelize.STRING,
-        allowNull: false,
-        unique: true,
-      },
+     
+    
 
       createdAt: {
         allowNull: false,

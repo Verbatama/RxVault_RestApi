@@ -9,11 +9,11 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      resep_id: {
+      detail_resep_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "Reseps",
+          model: "DetailReseps",
           key: "id",
         },
       },
@@ -29,7 +29,7 @@ module.exports = {
         type: Sequelize.DATE,
         allowNull: false,
       },
-      status_id: {
+      status_dispensing_id: {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
