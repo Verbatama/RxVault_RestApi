@@ -13,6 +13,14 @@ const StokKeluarSchema = z.object({
 const StokKeluarByNoRegSchema = z.object({
   no_registrasi: requiredString('Nomor Registrasi', 1, 50),
   apoteker_id: requiredPositiveInteger('Apoteker ID'),
+  items: z
+    .array(
+      z.object({
+        detail_resep_id: requiredPositiveInteger('Detail Resep ID'),
+        produk_obat_id: requiredPositiveInteger('Produk Obat ID'),
+      }),
+    )
+    .optional(),
 });
 
 module.exports = { StokKeluarSchema, StokKeluarByNoRegSchema };

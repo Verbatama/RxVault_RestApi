@@ -23,6 +23,48 @@ const getApotekLokasi = async (transaction) => {
   return allLokasi.find((item) => String(item.nama_lokasi || '').toLowerCase() === 'apotek') || null;
 };
 
+const consumeStokApotekByProdukObat = async ({ produk_obat_id, qtyNeeded, apotekLokasiId, transaction }) => {
+  const stokCandidates = await Stok.findAll({
+    where: {
+      lokasi_id: apotekLokasiId,
+      produk_obat_id: Number(produk_obat_id),
+    },
+    order: [['expired_date', 'ASC'], ['id', 'ASC']],
+    transaction,
+    lock: transaction.LOCK.UPDATE,
+  });
+
+  let remaining = Number(qtyNeeded);
+  const consumed = [];
+
+  for (const row of stokCandidates) {
+    if (remaining <= 0) {
+      break;
+    }
+    const qtyStock = Number(row.jumlah_obat || 0);
+    if (qtyStock <= 0) {
+      continue;
+    }
+
+    const used = Math.min(qtyStock, remaining);
+    row.jumlah_obat = qtyStock - used;
+    await row.save({ transaction });
+
+    consumed.push({
+      nomor_batch: row.nomor_batch,
+      jumlah: used,
+      produk_obat_id: row.produk_obat_id,
+    });
+    remaining -= used;
+  }
+
+  return {
+    success: remaining <= 0,
+    consumed,
+    remaining,
+  };
+};
+
 const consumeStokApotekByObat = async ({ obat_id, qtyNeeded, apotekLokasiId, transaction }) => {
   const stokCandidates = await Stok.findAll({
     where: { lokasi_id: apotekLokasiId },
@@ -154,7 +196,7 @@ const processStokKeluarByNoReg = async (req, res) => {
   const endpoint = 'POST:/api/stok-keluar/by-no-reg';
   let idempotencyRecord = null;
   try {
-    const { no_registrasi, apoteker_id } = req.body;
+    const { no_registrasi, apoteker_id, items } = req.body;
 
     if (!idempotencyKey) {
       await t.rollback();
@@ -197,9 +239,13 @@ const processStokKeluarByNoReg = async (req, res) => {
       where: { nama_status: 'Sudah' },
       transaction: t,
     });
-    if (!statusSudah) {
+    const statusPending = await StatusDispensing.findOne({
+      where: { nama_status: 'Pending' },
+      transaction: t,
+    });
+    if (!statusSudah || !statusPending) {
       await t.rollback();
-      return respon.badRequest(res, 'Status dispensing Sudah belum tersedia');
+      return respon.badRequest(res, 'Master status dispensing (Sudah/Pending) belum lengkap');
     }
 
     const kunjungan = await Kunjungan.findOne({
@@ -221,7 +267,6 @@ const processStokKeluarByNoReg = async (req, res) => {
                   model: Dispensing,
                   as: 'dispensing',
                   where: {
-                    status_dispensing_id: statusSudah.id,
                     is_stok_keluar: false,
                   },
                   required: false,
@@ -243,26 +288,86 @@ const processStokKeluarByNoReg = async (req, res) => {
     const processed = [];
     const failed = [];
 
+    const selectionMap = new Map();
+    if (Array.isArray(items)) {
+      for (const item of items) {
+        if (!item) {
+          continue;
+        }
+        selectionMap.set(Number(item.detail_resep_id), Number(item.produk_obat_id));
+      }
+    }
+
     for (const resep of kunjungan.reseps || []) {
       for (const detail of resep.detailReseps || []) {
-        const dispensingRow = (detail.dispensing || [])[0];
+        const dispensingRow = (detail.dispensing || []).slice().sort((a, b) => b.id - a.id)[0] || null;
         if (!dispensingRow) {
           continue;
         }
 
         const qtyNeeded = Number(detail.jumlah);
-        const consumption = await consumeStokApotekByObat({
-          obat_id: detail.obat_id,
-          qtyNeeded,
-          apotekLokasiId: apotek.id,
-          transaction: t,
-        });
+
+        let consumption = null;
+        let selectedProdukObatId = null;
+        if (selectionMap.size > 0) {
+          selectedProdukObatId = selectionMap.get(Number(detail.id)) || null;
+          if (!selectedProdukObatId) {
+            failed.push({
+              detail_resep_id: detail.id,
+              nama_obat: detail.obat?.nama_obat || '-',
+              alasan: 'Produk obat belum dipilih (dari rekap stok apotek)',
+            });
+            continue;
+          }
+
+          const produk = await ProdukObat.findByPk(selectedProdukObatId, { transaction: t });
+          if (!produk) {
+            failed.push({
+              detail_resep_id: detail.id,
+              nama_obat: detail.obat?.nama_obat || '-',
+              alasan: 'Produk obat tidak ditemukan',
+            });
+            continue;
+          }
+
+          if (Number(produk.obat_id) !== Number(detail.obat_id)) {
+            failed.push({
+              detail_resep_id: detail.id,
+              nama_obat: detail.obat?.nama_obat || '-',
+              alasan: 'Produk obat yang dipilih tidak sesuai dengan obat di resep',
+            });
+            continue;
+          }
+
+          consumption = await consumeStokApotekByProdukObat({
+            produk_obat_id: selectedProdukObatId,
+            qtyNeeded,
+            apotekLokasiId: apotek.id,
+            transaction: t,
+          });
+        } else {
+          consumption = await consumeStokApotekByObat({
+            obat_id: detail.obat_id,
+            qtyNeeded,
+            apotekLokasiId: apotek.id,
+            transaction: t,
+          });
+        }
 
         if (!consumption.success) {
+          await dispensingRow.update(
+            {
+              status_dispensing_id: statusPending.id,
+            },
+            { transaction: t },
+          );
+
           failed.push({
             detail_resep_id: detail.id,
             nama_obat: detail.obat?.nama_obat || '-',
-            alasan: 'Stok apotek tidak cukup saat proses stok keluar',
+            alasan: selectedProdukObatId
+              ? 'Stok apotek tidak cukup untuk produk obat yang dipilih'
+              : 'Stok apotek tidak cukup saat proses stok keluar',
           });
           continue;
         }
@@ -284,12 +389,14 @@ const processStokKeluarByNoReg = async (req, res) => {
           apoteker_id,
           dispensingAt: new Date(),
           is_stok_keluar: true,
+          status_dispensing_id: statusSudah.id,
         }, { transaction: t });
 
         processed.push({
           detail_resep_id: detail.id,
           nama_obat: detail.obat?.nama_obat || '-',
           jumlah_keluar: qtyNeeded,
+          produk_obat_id: selectedProdukObatId,
           batches: consumption.consumed,
         });
       }

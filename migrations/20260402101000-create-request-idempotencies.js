@@ -3,6 +3,7 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
+    // Menyimpan jejak request idempoten agar retry tidak memproses aksi ganda.
     await queryInterface.createTable("RequestIdempotencies", {
       id: {
         allowNull: false,
@@ -44,6 +45,7 @@ module.exports = {
       },
     });
 
+    // Satu endpoint + idempotency key harus unik.
     await queryInterface.addIndex("RequestIdempotencies", ["endpoint", "idempotency_key"], {
       name: "uniq_idempotency_endpoint_key",
       unique: true,

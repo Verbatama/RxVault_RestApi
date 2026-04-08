@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 const { RequestIdempotency } = require("../models");
 
+// Hash payload request untuk memastikan key yang sama tidak dipakai dengan isi berbeda.
 const hashBody = (body) => {
   const text = JSON.stringify(body || {});
   return crypto.createHash("sha256").update(text).digest("hex");
@@ -8,6 +9,7 @@ const hashBody = (body) => {
 
 const beginIdempotentRequest = async ({ endpoint, idempotencyKey, body }) => {
   const requestHash = hashBody(body);
+  // Cari apakah key untuk endpoint ini sudah pernah dipakai.
   const existing = await RequestIdempotency.findOne({
     where: {
       endpoint,
@@ -16,6 +18,7 @@ const beginIdempotentRequest = async ({ endpoint, idempotencyKey, body }) => {
   });
 
   if (existing) {
+    // Tolak jika key sama tapi payload berbeda.
     if (existing.request_hash !== requestHash) {
       return {
         state: "hash_mismatch",
@@ -23,6 +26,7 @@ const beginIdempotentRequest = async ({ endpoint, idempotencyKey, body }) => {
       };
     }
 
+    // Hindari eksekusi paralel untuk request yang sama.
     if (existing.status === "PROCESSING") {
       return {
         state: "processing",
@@ -30,12 +34,14 @@ const beginIdempotentRequest = async ({ endpoint, idempotencyKey, body }) => {
       };
     }
 
+    // Jika sudah pernah selesai, response lama bisa di-replay.
     return {
       state: "replay",
       record: existing,
     };
   }
 
+  // Buat jejak baru dan tandai sedang diproses.
   const record = await RequestIdempotency.create({
     endpoint,
     idempotency_key: idempotencyKey,
@@ -50,6 +56,7 @@ const beginIdempotentRequest = async ({ endpoint, idempotencyKey, body }) => {
 };
 
 const completeIdempotentRequest = async ({ recordId, status, responseCode, responseBody }) => {
+  // Simpan status akhir dan response agar bisa dipakai saat replay.
   await RequestIdempotency.update(
     {
       status,

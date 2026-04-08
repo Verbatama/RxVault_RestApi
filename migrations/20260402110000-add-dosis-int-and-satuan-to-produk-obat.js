@@ -3,11 +3,13 @@
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
+    // Tambah kolom satuan dosis agar nilai dosis terstruktur (angka + satuan).
     await queryInterface.addColumn("ProdukObats", "satuan_dosis", {
       type: Sequelize.STRING,
       allowNull: true,
     });
 
+    // Normalisasi data lama: ekstrak angka dosis dan turunkan satuan dari teks dosis.
     await queryInterface.sequelize.query(`
       UPDATE ProdukObats
       SET
@@ -26,12 +28,14 @@ module.exports = {
         END;
     `);
 
+    // Dosis dibuat numerik supaya konsisten untuk perhitungan dan filter.
     await queryInterface.changeColumn("ProdukObats", "dosis", {
       type: Sequelize.INTEGER,
       allowNull: false,
       defaultValue: 0,
     });
 
+    // Satuan dosis dibuat wajib isi dengan default mg.
     await queryInterface.changeColumn("ProdukObats", "satuan_dosis", {
       type: Sequelize.STRING,
       allowNull: false,
