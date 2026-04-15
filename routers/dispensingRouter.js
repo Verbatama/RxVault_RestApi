@@ -7,6 +7,10 @@ const {
 } = require("../schemas/dispensingSchema");
 const validate = require("../helpers/validate");
 const {
+  authenticateApoteker,
+  injectApotekerIdFromSession,
+} = require("../middlewares/apotekerAuthMiddleware");
+const {
   getDispensing,
   getDispensingById,
   createDispensing,
@@ -17,11 +21,17 @@ const {
 } = require("../controllers/dispensingController");
 
 router.get("/", getDispensing);
-router.get("/queue", getDispensingQueue);
-router.get("/by-no-reg/:no_registrasi", getDispensingByNoReg);
+router.get("/queue", authenticateApoteker, getDispensingQueue);
+router.get("/by-no-reg/:no_registrasi", authenticateApoteker, getDispensingByNoReg);
 router.get("/:id", getDispensingById);
 router.post("/", validate(createDispensingSchema), createDispensing);
-router.post("/process-by-no-reg", validate(processDispensingByNoRegSchema), processDispensingByNoReg);
+router.post(
+  "/process-by-no-reg",
+  authenticateApoteker,
+  injectApotekerIdFromSession,
+  validate(processDispensingByNoRegSchema),
+  processDispensingByNoReg,
+);
 router.put("/:id", validate(updateDispensingSchema), updateDispensing);
 
 module.exports = router;
