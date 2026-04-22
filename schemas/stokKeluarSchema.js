@@ -8,6 +8,9 @@ const StokKeluarSchema = z.object({
   nomor_batch: requiredString('Nomor Batch'),
   jumlah_obat: requiredPositiveInteger('Jumlah Obat'),
   penerima: requiredString('Penerima'),
+}).refine((data) => data.obat_id || data.produk_obat_id, {
+  message: 'Salah satu dari obat_id atau produk_obat_id wajib diisi',
+  path: ['obat_id'],
 });
 
 const StokKeluarByNoRegSchema = z.object({

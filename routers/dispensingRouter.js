@@ -24,7 +24,13 @@ router.get("/", getDispensing);
 router.get("/queue", authenticateApoteker, getDispensingQueue);
 router.get("/by-no-reg/:no_registrasi", authenticateApoteker, getDispensingByNoReg);
 router.get("/:id", getDispensingById);
-router.post("/", validate(createDispensingSchema), createDispensing);
+router.post(
+  "/",
+  authenticateApoteker,
+  injectApotekerIdFromSession,
+  validate(createDispensingSchema),
+  createDispensing,
+);
 router.post(
   "/process-by-no-reg",
   authenticateApoteker,

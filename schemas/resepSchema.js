@@ -22,7 +22,7 @@ const createResepSchema = z.object({
 
 const updateResepSchema = z
   .object({
-    dokter_id: requiredString("Dokter"),
+    dokter_id: requiredPositiveInteger("Dokter"),
     tanggal: requiredDate("Tanggal"),
   })
   .partial();

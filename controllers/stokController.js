@@ -206,9 +206,11 @@ const getRekapStokObat = async (req, res) => {
           dosis: Number(produk?.dosis || 0),
           satuan_dosis_id: satuan?.id || produk?.satuan_dosis_id || null,
           satuan_dosis: satuan?.nama_satuan_dosis || produk?.satuan_dosis || '-',
+          min_stok_gudang: Number(produk?.min_stok_gudang || 20),
           stok_total: 0,
           stok_gudang: 0,
           stok_apotek: 0,
+          earliest_expired_date: null,
         });
       }
 
@@ -222,9 +224,185 @@ const getRekapStokObat = async (req, res) => {
       if (lokasiNama === 'apotek') {
         item.stok_apotek += qty;
       }
+      if (row.expired_date) {
+        if (!item.earliest_expired_date || new Date(row.expired_date) < new Date(item.earliest_expired_date)) {
+          item.earliest_expired_date = row.expired_date;
+        }
+      }
     }
 
     return respon.success(res, 'Success get rekap stok obat', Array.from(grouped.values()));
+  } catch (error) {
+    console.error(error);
+    return respon.serverError(res, error.message);
+  }
+};
+
+const getStokReminderGudang = async (req, res) => {
+  try {
+    const parsedDefaultMin = Number(req.query.default_min_stok);
+    const defaultMinStok = Number.isFinite(parsedDefaultMin) && parsedDefaultMin > 0
+      ? Math.floor(parsedDefaultMin)
+      : 20;
+
+    const allLokasi = await Lokasi.findAll({
+      attributes: ["id", "nama_lokasi"],
+    });
+
+    const gudangLokasiIds = allLokasi
+      .filter((item) => String(item.nama_lokasi || "").toLowerCase() === "gudang")
+      .map((item) => item.id);
+
+    if (gudangLokasiIds.length === 0) {
+      return respon.notFound(res, "Lokasi Gudang belum tersedia");
+    }
+
+    const stokRows = await Stok.findAll({
+      where: {
+        lokasi_id: gudangLokasiIds,
+      },
+      include: [
+        {
+          model: ProdukObat,
+          as: "produkObat",
+          attributes: [
+            "id",
+            "obat_id",
+            "brand",
+            "dosis",
+            "satuan_dosis",
+            "satuan_dosis_id",
+            "min_stok_gudang",
+          ],
+          include: [
+            {
+              model: Obat,
+              as: "obat",
+              attributes: ["id", "nama_obat"],
+            },
+            {
+              model: BentukObat,
+              as: "bentukObat",
+              attributes: ["id", "nama_bentuk_obat"],
+            },
+            {
+              model: SatuanDosis,
+              as: "satuanDosis",
+              attributes: ["id", "nama_satuan_dosis"],
+            },
+          ],
+          required: true,
+        },
+      ],
+      order: [["expired_date", "ASC"], ["id", "ASC"]],
+    });
+
+    const grouped = new Map();
+
+    for (const row of stokRows) {
+      const produk = row.produkObat;
+      if (!produk) {
+        continue;
+      }
+
+      const key = Number(produk.id);
+      const qty = Number(row.jumlah_obat || 0);
+
+      if (!grouped.has(key)) {
+        const minStokGudang = Number(produk.min_stok_gudang || 0) > 0
+          ? Number(produk.min_stok_gudang)
+          : defaultMinStok;
+
+        grouped.set(key, {
+          produk_obat_id: key,
+          obat_id: produk.obat?.id || produk.obat_id || null,
+          nama_obat: produk.obat?.nama_obat || "-",
+          brand: produk.brand || "-",
+          bentuk_obat: produk.bentukObat?.nama_bentuk_obat || "-",
+          dosis: Number(produk.dosis || 0),
+          satuan_dosis: produk.satuanDosis?.nama_satuan_dosis || produk.satuan_dosis || "-",
+          stok_gudang: 0,
+          min_stok_gudang: minStokGudang,
+          selisih: 0,
+          level: "AMAN",
+          earliest_expired_date: row.expired_date || null,
+        });
+      }
+
+      const item = grouped.get(key);
+      item.stok_gudang += qty;
+
+      if (row.expired_date && (!item.earliest_expired_date || new Date(row.expired_date) < new Date(item.earliest_expired_date))) {
+        item.earliest_expired_date = row.expired_date;
+      }
+    }
+
+    const reminders = Array.from(grouped.values())
+      .map((item) => {
+        const selisih = item.stok_gudang - item.min_stok_gudang;
+        let level = "AMAN";
+
+        if (item.stok_gudang <= 0) {
+          level = "HABIS";
+        } else if (item.stok_gudang <= Math.ceil(item.min_stok_gudang * 0.5)) {
+          level = "KRITIS";
+        } else if (item.stok_gudang <= item.min_stok_gudang) {
+          level = "WASPADA";
+        }
+
+        return {
+          ...item,
+          selisih,
+          level,
+        };
+      })
+      .filter((item) => item.level !== "AMAN");
+
+    const severityRank = {
+      HABIS: 3,
+      KRITIS: 2,
+      WASPADA: 1,
+    };
+
+    reminders.sort((a, b) => {
+      const bySeverity = (severityRank[b.level] || 0) - (severityRank[a.level] || 0);
+      if (bySeverity !== 0) {
+        return bySeverity;
+      }
+
+      const bySelisih = a.selisih - b.selisih;
+      if (bySelisih !== 0) {
+        return bySelisih;
+      }
+
+      return String(a.nama_obat).localeCompare(String(b.nama_obat));
+    });
+
+    const summary = reminders.reduce(
+      (acc, item) => {
+        acc.total += 1;
+        if (item.level === "HABIS") {
+          acc.habis += 1;
+        } else if (item.level === "KRITIS") {
+          acc.kritis += 1;
+        } else if (item.level === "WASPADA") {
+          acc.waspada += 1;
+        }
+        return acc;
+      },
+      {
+        total: 0,
+        habis: 0,
+        kritis: 0,
+        waspada: 0,
+      },
+    );
+
+    return respon.success(res, "Success get stok reminder gudang", {
+      default_min_stok: defaultMinStok,
+      summary,
+      reminders,
+    });
   } catch (error) {
     console.error(error);
     return respon.serverError(res, error.message);
@@ -411,5 +589,6 @@ module.exports = {
   createStokPerLokasi,
   getJumlahStok,
   getRekapStokObat,
+  getStokReminderGudang,
   transferStok,
 };

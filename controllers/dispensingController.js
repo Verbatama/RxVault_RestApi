@@ -12,15 +12,15 @@ const {
   Apoteker,
   DispensingAuditLog,
 } = require("../models");
-const {
-  beginIdempotentRequest,
-  completeIdempotentRequest,
-} = require("../helpers/idempotencyHelper");
 
 const getLokasiApotek = async () => {
   const { Lokasi } = require("../models");
   const data = await Lokasi.findAll();
-  return data.find((item) => String(item.nama_lokasi || "").toLowerCase() === "apotek") || null;
+  return (
+    data.find(
+      (item) => String(item.nama_lokasi || "").toLowerCase() === "apotek",
+    ) || null
+  );
 };
 
 const getStatusByName = async (name) => {
@@ -114,7 +114,57 @@ const getDispensingById = async (req, res) => {
 
 const createDispensing = async (req, res) => {
   try {
-    const newDispensing = await Dispensing.create(req.body);
+    const {
+      detail_resep_id,
+      apoteker_id,
+      status_dispensing_id,
+      dispensingAt,
+    } = req.body;
+
+    const [detailResep, statusDispensing, apoteker] = await Promise.all([
+      DetailResep.findByPk(detail_resep_id),
+      StatusDispensing.findByPk(status_dispensing_id),
+      Apoteker.findByPk(apoteker_id),
+    ]);
+
+    if (!detailResep) {
+      return respon.notFound(res, "Detail resep tidak ditemukan");
+    }
+
+    if (!statusDispensing) {
+      return respon.notFound(res, "Status dispensing tidak ditemukan");
+    }
+
+    if (!apoteker) {
+      return respon.notFound(res, "Apoteker tidak ditemukan");
+    }
+
+    const existingDispensing = await Dispensing.findOne({
+      where: { detail_resep_id },
+    });
+
+    if (existingDispensing) {
+      await existingDispensing.update({
+        apoteker_id,
+        status_dispensing_id,
+        dispensingAt,
+      });
+
+      return respon.success(
+        res,
+        "Success update dispensing",
+        existingDispensing,
+      );
+    }
+
+    const newDispensing = await Dispensing.create({
+      detail_resep_id,
+      apoteker_id,
+      status_dispensing_id,
+      dispensingAt,
+      is_stok_keluar: false,
+    });
+
     return respon.success(res, "Success create dispensing", newDispensing);
   } catch (error) {
     console.log(error);
@@ -155,8 +205,13 @@ const getDispensingByNoReg = async (req, res) => {
     const detailItems = [];
     for (const resep of kunjungan.reseps || []) {
       for (const detail of resep.detailReseps || []) {
-        const available = await calculateAvailableQtyByObat(detail.obat_id, lokasiApotek.id);
-        const lastDispensing = (detail.dispensing || []).slice().sort((a, b) => b.id - a.id)[0] || null;
+        const available = await calculateAvailableQtyByObat(
+          detail.obat_id,
+          lokasiApotek.id,
+        );
+        const lastDispensing =
+          (detail.dispensing || []).slice().sort((a, b) => b.id - a.id)[0] ||
+          null;
         detailItems.push({
           detail_resep_id: detail.id,
           resep_id: resep.id,
@@ -185,42 +240,9 @@ const getDispensingByNoReg = async (req, res) => {
 const processDispensingByNoReg = async (req, res) => {
   const { sequelize } = require("../models");
   const t = await sequelize.transaction();
-  const idempotencyKey = req.headers["x-idempotency-key"];
   const endpoint = "POST:/api/dispensing/process-by-no-reg";
-  let idempotencyRecord = null;
   try {
     const { no_registrasi, apoteker_id } = req.body;
-
-    if (!idempotencyKey) {
-      await t.rollback();
-      return respon.badRequest(res, "Header x-idempotency-key wajib diisi");
-    }
-
-    const idem = await beginIdempotentRequest({
-      endpoint,
-      idempotencyKey: String(idempotencyKey),
-      body: req.body,
-    });
-
-    if (idem.state === "hash_mismatch") {
-      await t.rollback();
-      return respon.conflict(res, "Idempotency key sudah dipakai untuk payload berbeda");
-    }
-    if (idem.state === "processing") {
-      await t.rollback();
-      return respon.conflict(res, "Request dengan idempotency key ini sedang diproses");
-    }
-    if (idem.state === "replay") {
-      await t.rollback();
-      return res.status(idem.record.response_code || 200).json(
-        idem.record.response_body || {
-          success: true,
-          message: "Replay response",
-        },
-      );
-    }
-
-    idempotencyRecord = idem.record;
 
     const apoteker = await Apoteker.findByPk(apoteker_id, { transaction: t });
     if (!apoteker) {
@@ -238,7 +260,10 @@ const processDispensingByNoReg = async (req, res) => {
     const statusPending = await getStatusByName("Pending");
     if (!statusSudah || !statusPending) {
       await t.rollback();
-      return respon.badRequest(res, "Master status dispensing (Sudah/Pending) belum lengkap");
+      return respon.badRequest(
+        res,
+        "Master status dispensing (Sudah/Pending) belum lengkap",
+      );
     }
 
     const kunjungan = await findKunjunganByNoReg(no_registrasi);
@@ -251,7 +276,10 @@ const processDispensingByNoReg = async (req, res) => {
 
     for (const resep of kunjungan.reseps || []) {
       for (const detail of resep.detailReseps || []) {
-        const available = await calculateAvailableQtyByObat(detail.obat_id, lokasiApotek.id);
+        const available = await calculateAvailableQtyByObat(
+          detail.obat_id,
+          lokasiApotek.id,
+        );
         const isAvailable = available >= Number(detail.jumlah);
         const statusId = isAvailable ? statusSudah.id : statusPending.id;
 
@@ -311,7 +339,6 @@ const processDispensingByNoReg = async (req, res) => {
       action_type: "PROCESS_DISPENSING",
       no_registrasi: String(no_registrasi),
       apoteker_id,
-      idempotency_key: String(idempotencyKey),
       status: "SUCCESS",
       processed_count: processed.length,
       failed_count: 0,
@@ -319,27 +346,9 @@ const processDispensingByNoReg = async (req, res) => {
       metadata: { processed },
     });
 
-    await completeIdempotentRequest({
-      recordId: idempotencyRecord.id,
-      status: "SUCCESS",
-      responseCode: 200,
-      responseBody,
-    });
-
     return res.status(200).json(responseBody);
   } catch (error) {
     await t.rollback();
-    if (idempotencyRecord) {
-      await completeIdempotentRequest({
-        recordId: idempotencyRecord.id,
-        status: "FAILED",
-        responseCode: 500,
-        responseBody: {
-          success: false,
-          message: error.message,
-        },
-      });
-    }
 
     try {
       await DispensingAuditLog.create({
@@ -347,7 +356,6 @@ const processDispensingByNoReg = async (req, res) => {
         action_type: "PROCESS_DISPENSING",
         no_registrasi: String(req.body?.no_registrasi || "-"),
         apoteker_id: req.body?.apoteker_id || null,
-        idempotency_key: idempotencyKey ? String(idempotencyKey) : null,
         status: "FAILED",
         processed_count: 0,
         failed_count: 1,
@@ -364,7 +372,9 @@ const processDispensingByNoReg = async (req, res) => {
 
 const getDispensingQueue = async (req, res) => {
   try {
-    const q = String(req.query.q || "").toLowerCase().trim();
+    const q = String(req.query.q || "")
+      .toLowerCase()
+      .trim();
 
     const kunjungans = await Kunjungan.findAll({
       include: [
@@ -403,7 +413,11 @@ const getDispensingQueue = async (req, res) => {
     for (const k of kunjungans) {
       const noReg = String(k.no_registrasi || "");
       const namaPasien = String(k.pasien?.nama_pasien || "");
-      if (q && !noReg.toLowerCase().includes(q) && !namaPasien.toLowerCase().includes(q)) {
+      if (
+        q &&
+        !noReg.toLowerCase().includes(q) &&
+        !namaPasien.toLowerCase().includes(q)
+      ) {
         continue;
       }
 
@@ -415,7 +429,9 @@ const getDispensingQueue = async (req, res) => {
       for (const resep of k.reseps || []) {
         for (const detail of resep.detailReseps || []) {
           total += 1;
-          const lastDispensing = (detail.dispensing || []).slice().sort((a, b) => b.id - a.id)[0] || null;
+          const lastDispensing =
+            (detail.dispensing || []).slice().sort((a, b) => b.id - a.id)[0] ||
+            null;
           const status = String(lastDispensing?.status?.nama_status || "Belum");
           if (status === "Sudah") {
             sudah += 1;

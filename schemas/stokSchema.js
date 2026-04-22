@@ -23,13 +23,17 @@ const createStokPerLokasiSchema = z.object({
 });
 
 const transferStokSchema = z.object({
-  obat_id: requiredPositiveInteger("Obat"),
+  produk_obat_id: z.number().int().positive().optional(),
+  obat_id: z.number().int().positive().optional(),
   golongan_obat_id: z.number().int().positive().optional(),
   jumlah_obat: requiredPositiveInteger("Jumlah Obat"),
   dari_lokasi_id: z.number().int().positive().optional(),
   ke_lokasi_id: z.number().int().positive().optional(),
   dari_lokasi_nama: z.string().min(1, "Nama lokasi asal tidak valid").optional(),
   ke_lokasi_nama: z.string().min(1, "Nama lokasi tujuan tidak valid").optional(),
+}).refine((data) => data.obat_id || data.produk_obat_id, {
+  message: "Salah satu dari Obat atau Produk Obat wajib diisi",
+  path: ["obat_id"],
 });
 
 const updateStokSchema = createStokSchema.partial();

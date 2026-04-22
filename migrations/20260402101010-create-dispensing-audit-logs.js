@@ -26,10 +26,6 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: true,
       },
-      idempotency_key: {
-        type: Sequelize.STRING,
-        allowNull: true,
-      },
       status: {
         type: Sequelize.STRING,
         allowNull: false,

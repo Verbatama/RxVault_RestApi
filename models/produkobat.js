@@ -61,6 +61,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
       unique: true,
     },
+    min_stok_gudang: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 20,
+    },
     
   }, {
     sequelize,

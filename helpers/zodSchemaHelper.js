@@ -27,7 +27,7 @@ const requiredDate = (fieldName) => {
 };
 
 const requiredEmail = (fieldName) => {
-  z.string().email(`${fieldName} harus berupa email yang valid`);
+  return z.string().email(`${fieldName} harus berupa email yang valid`);
 };
 
 const requiredPassword = (fieldName) => {

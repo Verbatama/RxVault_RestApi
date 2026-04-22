@@ -13,11 +13,6 @@ const {
   Obat,
   DispensingAuditLog,
 } = require('../models');
-const {
-  beginIdempotentRequest,
-  completeIdempotentRequest,
-} = require('../helpers/idempotencyHelper');
-
 const getApotekLokasi = async (transaction) => {
   const allLokasi = await Lokasi.findAll({ transaction });
   return allLokasi.find((item) => String(item.nama_lokasi || '').toLowerCase() === 'apotek') || null;
@@ -192,42 +187,9 @@ const createStokKeluar = async (req, res) => {
 
 const processStokKeluarByNoReg = async (req, res) => {
   const t = await sequelize.transaction();
-  const idempotencyKey = req.headers['x-idempotency-key'];
   const endpoint = 'POST:/api/stok-keluar/by-no-reg';
-  let idempotencyRecord = null;
   try {
     const { no_registrasi, apoteker_id, items } = req.body;
-
-    if (!idempotencyKey) {
-      await t.rollback();
-      return respon.badRequest(res, 'Header x-idempotency-key wajib diisi');
-    }
-
-    const idem = await beginIdempotentRequest({
-      endpoint,
-      idempotencyKey: String(idempotencyKey),
-      body: req.body,
-    });
-
-    if (idem.state === 'hash_mismatch') {
-      await t.rollback();
-      return respon.conflict(res, 'Idempotency key sudah dipakai untuk payload berbeda');
-    }
-    if (idem.state === 'processing') {
-      await t.rollback();
-      return respon.conflict(res, 'Request dengan idempotency key ini sedang diproses');
-    }
-    if (idem.state === 'replay') {
-      await t.rollback();
-      return res.status(idem.record.response_code || 200).json(
-        idem.record.response_body || {
-          success: true,
-          message: 'Replay response',
-        },
-      );
-    }
-
-    idempotencyRecord = idem.record;
 
     const apotek = await getApotekLokasi(t);
     if (!apotek) {
@@ -418,7 +380,6 @@ const processStokKeluarByNoReg = async (req, res) => {
       action_type: 'PROCESS_STOK_KELUAR',
       no_registrasi: String(no_registrasi),
       apoteker_id,
-      idempotency_key: String(idempotencyKey),
       status: 'SUCCESS',
       processed_count: processed.length,
       failed_count: failed.length,
@@ -426,28 +387,9 @@ const processStokKeluarByNoReg = async (req, res) => {
       metadata: { processed, failed },
     });
 
-    await completeIdempotentRequest({
-      recordId: idempotencyRecord.id,
-      status: 'SUCCESS',
-      responseCode: 200,
-      responseBody,
-    });
-
     return res.status(200).json(responseBody);
   } catch (error) {
     await t.rollback();
-
-    if (idempotencyRecord) {
-      await completeIdempotentRequest({
-        recordId: idempotencyRecord.id,
-        status: 'FAILED',
-        responseCode: 500,
-        responseBody: {
-          success: false,
-          message: error.message,
-        },
-      });
-    }
 
     try {
       await DispensingAuditLog.create({
@@ -455,7 +397,6 @@ const processStokKeluarByNoReg = async (req, res) => {
         action_type: 'PROCESS_STOK_KELUAR',
         no_registrasi: String(req.body?.no_registrasi || '-'),
         apoteker_id: req.body?.apoteker_id || null,
-        idempotency_key: idempotencyKey ? String(idempotencyKey) : null,
         status: 'FAILED',
         processed_count: 0,
         failed_count: 1,

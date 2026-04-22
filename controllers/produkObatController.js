@@ -9,6 +9,7 @@ const createProdukObat = async (req, res) => {
             bentuk_obat_id,
             dosis,
             satuan_dosis_id,
+            min_stok_gudang,
             bpom,
             nama_supplier,
             alamat_supplier,
@@ -55,16 +56,22 @@ const createProdukObat = async (req, res) => {
                 );
             }
 
+            const produkObatPayload = {
+                obat_id,
+                brand,
+                bentuk_obat_id,
+                dosis,
+                satuan_dosis_id,
+                bpom: bpomValue,
+                stokObats: stokObatsPayload,
+            };
+
+            if (Number(min_stok_gudang) > 0) {
+                produkObatPayload.min_stok_gudang = Number(min_stok_gudang);
+            }
+
             const newProdukObat = await ProdukObat.create(
-                {
-                    obat_id,
-                    brand,
-                    bentuk_obat_id,
-                    dosis,
-                    satuan_dosis_id,
-                    bpom: bpomValue,
-                    stokObats: stokObatsPayload,
-                },
+                produkObatPayload,
                 {
                     include: [
                         { model: Stok, as: "stokObats" },
